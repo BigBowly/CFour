@@ -1,8 +1,9 @@
 
+# importing OS for screen clear; importing random for randomizing starting player
 import os
 import random
 
-# class to hold the gameboard values
+# class to hold the gameboard values; some last entire game, others per turn
 class GameBoard:
     def __init__(self, players = 2):
 
@@ -34,7 +35,6 @@ class Slot:
     surrounding_slots = {"vert":[[-1,0],[1,0]], "diag1":[[-1,1],[1,-1]], "horiz":[[0,1],[0,-1]], "diag2":[[1,1],[-1,-1]]}
 
     def __init__(self, id):
-
         self.id = id
         self.owner = "  "
 
@@ -50,7 +50,7 @@ def clear_screen():
         os.system("clear")
 
 
-# Function that creates slot variables
+# Function that dynamically creates slot variables
 def create_slots(rows = 6, columns = 7):
     temp_slot = ""
     for i in range(1, rows+1):
@@ -66,7 +66,7 @@ def create_slots(rows = 6, columns = 7):
 
 
 # Function that creates gameboard - uses as many loops as possible to cut down on typing and to allow for different board sizes
-# the screen is cleared and the game table is redrawn every time a move is made
+# the screen is cleared and the game table is redrawn every time a move is made; slots are not recreated every turn
 def draw_gameboard(rows, columns):
 
     gameboard_ctrl.gameboard_size += [rows, columns]
@@ -96,17 +96,19 @@ def draw_gameboard(rows, columns):
     # putting together dynamically created strings into game table
     if (gameboard_ctrl.win == False):
         print("\n(" + gameboard_ctrl.player_chip[gameboard_ctrl.current_player] + ") Player " + str(gameboard_ctrl.current_player) + "'s turn:\n")
+
     print("")
     print(column_row)
     print("")
+
     for i in range(1, rows+1):
         row_string = "row" + str(i)
         print(floor)
         print(globals()[row_string])
+
     print(floor + "\n")
 
     if (gameboard_ctrl.win == False):
-
         print("Enter \'q\' at any time to quit.")
 
         player_input()
@@ -117,7 +119,6 @@ def draw_gameboard(rows, columns):
 def drop_chip(column):
     turn_over = False
     empty_slot = False
-    # col_lowercase = column.lower()
     row_range = gameboard_ctrl.gameboard_size[0]
     col_range = gameboard_ctrl.gameboard_size[1]
     slot_count = row_range
@@ -139,7 +140,7 @@ def drop_chip(column):
 
             draw_gameboard(gameboard_ctrl.gameboard_size[0], gameboard_ctrl.gameboard_size[1])
 
-    # tallies turn count in order to know when the board is full without a winner
+    # tallies turn_count; players can choose to restart if the board fills with no winner.
     gameboard_ctrl.turn_count += 1
 
     check_slots(gameboard_ctrl.connected_slots_orig[0])
@@ -158,11 +159,9 @@ def check_slots(orig_slot):
     temp_down_slot = ""
     combined_slots = []
 
-    # becomes false when there's an opposing slot, empty slot, or out of bounds
+    # becomes false when there's an opposing slot, empty slot, or the slot doesn't exist because of board edge.
     up_filled = True
     down_filled = True
-    # orig_up_slot = orig_slot
-    # orig_down_slot = orig_slot
 
     # cycles through vertical, diagonal1, horizontal, diagonal2
     for direction_key in Slot.surrounding_slots:
@@ -180,11 +179,8 @@ def check_slots(orig_slot):
                     combined_slots.append(globals()[temp_up_slot])
                     test_row = int(temp_up_slot[1])
                     test_col = int(temp_up_slot[3])
-                    #orig_up_slot = globals()[temp_up_slot]
                 else:
                     up_filled = False
-                    # test_row = int(orig_slot.id[1])
-                    # test_col = int(orig_slot.id[3])
 
             else:
                 up_filled = False          
@@ -212,11 +208,8 @@ def check_slots(orig_slot):
                     combined_slots.append(globals()[temp_down_slot])
                     test_row = int(temp_down_slot[1])
                     test_col = int(temp_down_slot[3])
-                    #orig_down_slot = globals()[temp_down_slot]
                 else:
                     down_filled = False
-                    # test_row = int(orig_slot.id[1])
-                    # test_col = int(orig_slot.id[3])
 
             else:
                 down_filled = False
@@ -231,10 +224,6 @@ def check_slots(orig_slot):
         if combined_slots != []:
             gameboard_ctrl.connected_slots[direction_key] += combined_slots
         gameboard_ctrl.connected_slots[direction_key].append(orig_slot)
-
-        #  for slots in gameboard_ctrl.connected_slots[direction_key]:
-        #      if slots != orig_slot or slots == []:
-        #          gameboard_ctrl.connected_slots[direction_key].append(orig_slot)
         
         # restores default values for the next turn
         combined_slots = []
@@ -248,7 +237,7 @@ def check_slots(orig_slot):
     turn_end()
 
 
-
+# end of turn, or game if the player wins. Allows for restarting 
 def turn_end():
 
     player_input = ""
@@ -266,11 +255,12 @@ def turn_end():
                 slot.owner = "!!"
             gameboard_ctrl.win = True
 
-    # winning text
+    # winning condition section.
     if gameboard_ctrl.win == True:
 
         clear_screen()
 
+        player_input = 0
         print("\n\nCongratulations Player " + str(gameboard_ctrl.current_player) + "!!")
         print("You won in " + str(direction_win_count) + " direction(s).")
         print("Your largest connect four filled " + str(direction_win_size) + " slots.")
@@ -278,21 +268,21 @@ def turn_end():
         draw_gameboard(gameboard_ctrl.gameboard_size[0], gameboard_ctrl.gameboard_size[1])
 
         # do you want to play again
-        while player_input.lower() != "y" and player_input.lower() != "n" and player_input.lower() != "yes" and player_input.lower() != "no":
+        while player_input != "y" and player_input != "n" and player_input != "yes" and player_input != "no":
 
             print("\n\nWould you like to play again?")
             player_input = input("(y)es or (n)o:")
 
             clear_screen()
         
-        if player_input.lower() == "no" or player_input.lower() == "n":
+        if player_input == "no" or player_input == "n":
             print("\n\nThanks for playing!")
             return
 
-        player_input = ""
+        player_input = 0
 
-        # do you want to keep the same settings
-        while player_input.lower() != "y" and player_input.lower() != "n" and player_input.lower() != "yes" and player_input.lower() != "no":
+        # do you want to keep the same settings.
+        while player_input != "y" and player_input != "n" and player_input != "yes" and player_input != "no":
 
             print("\n\nWould you like to keep the same settings?")
             player_input = input("(y)es or (n)o:")
@@ -310,11 +300,11 @@ def turn_end():
             return
 
 
-    # game continues and connected slots defaults are restored
+    # if win condition isn't satisfied then game continues and connected slots defaults are restored.
     if gameboard_ctrl.turn_count >= (gameboard_ctrl.gameboard_size[0] * gameboard_ctrl.gameboard_size[1]):
 
-        player_input = ""
-        while player_input.lower() != "y" and player_input.lower() != "n" and player_input.lower() != "yes" and player_input.lower() != "no":
+        player_input = 0
+        while player_input != "y" and player_input != "n" and player_input != "yes" and player_input != "no":
       
             clear_screen()
 
@@ -322,7 +312,7 @@ def turn_end():
             print("Would you like to clear the board and resume playing? (y)es or (n)o")
             player_input = input(":")
 
-        if player_input.lower() == "y" or player_input.lower() == "yes":
+        if player_input == "y" or player_input == "yes":
 
             restart()
             return
@@ -343,7 +333,8 @@ def turn_end():
     else:
         gameboard_ctrl.current_player += 1
 
-    draw_gameboard(gameboard_ctrl.gameboard_size[0], gameboard_ctrl.gameboard_size[1]) 
+    draw_gameboard(gameboard_ctrl.gameboard_size[0], gameboard_ctrl.gameboard_size[1])
+    return
 
 
 # Player input text will change if there is an error
@@ -375,13 +366,15 @@ def player_input():
         clear_screen()
 
         draw_gameboard(gameboard_ctrl.gameboard_size[0], gameboard_ctrl.gameboard_size[1])
+        return
 
-    drop_chip(player_input)
+    else:
+        drop_chip(player_input)
 
 
+# makes sure no values carry over into the next game.
 def restore_defaults():
 
-    gameboard_ctrl
     gameboard_ctrl.gameboard_size = []
     gameboard_ctrl.connected_slots_orig = []
     gameboard_ctrl.connected_slots = {"vert":[], "diag1":[], "horiz":[], "diag2":[]}
@@ -392,7 +385,7 @@ def restore_defaults():
 
 
 
-# if the board gets full, check to see if players want to clear the board and continue or quit
+# used to have more code, now 
 def restart():
 
     restore_defaults()
@@ -492,6 +485,8 @@ def start_game():
 
     game_settings.append(player_input)
 
+    restore_defaults()
+
     gameboard_ctrl.total_players = game_settings[0]
     gameboard_ctrl.rows = game_settings[1]
     gameboard_ctrl.columns = game_settings[2]
@@ -507,14 +502,7 @@ def start_game():
 
 
 
-# start program - begin with the dynamic creation of slot variables
-# gameboard_ctrl = GameBoard(2)
-
-# clear_screen()
-
-# create_slots(6, 7)
+# creates the gameboard class variable and starts the game rolling which bounces from function to function till game end
 
 gameboard_ctrl = GameBoard()
 start_game()
-
-
